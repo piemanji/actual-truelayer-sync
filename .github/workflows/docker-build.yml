@@ -1,0 +1,41 @@
+name: Build Custom Sync Image
+
+on:
+  workflow_dispatch: # Allows you to press a button to manually rebuild
+  schedule:
+    - cron: '0 0 * * 0' # Rebuilds automatically every Sunday to get upstream Actual fixes
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Force Latest Actual Packages
+        run: |
+          # Inject the absolute latest release of the Actual API directly into the source
+          npm install @actual-app/api@latest --save
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Custom Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.actor }}/actual-truelayer-sync:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
