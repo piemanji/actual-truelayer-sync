@@ -21,7 +21,9 @@ export async function importTransactions(
   accountId: string,
   transactions: Parameters<typeof actual.importTransactions>[1],
 ): Promise<{ added: string[]; updated: string[] }> {
-  const result = await actual.importTransactions(accountId, transactions)
+  const result = await actual.importTransactions(accountId, transactions, {
+	  reimportDeleted: false
+  })
   if (result.errors.length > 0) {
     throw new Error(`Import errors for account ${accountId}: ${JSON.stringify(result.errors)}`)
   }
